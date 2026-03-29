@@ -1,6 +1,6 @@
 # Solana Wallet React App
 
-A React application for connecting to a Solana wallet and performing operations via a backend API.
+A React application for connecting to a Solana wallet and performing operations via a backend API. **Note: This application is currently configured for use on Solana Devnet only.**
 
 ## Features
 
@@ -41,12 +41,12 @@ yarn install
 1. Create a `.env` file in the project root:
 
 ```env
-# Solana network to use (devnet, testnet, mainnet-beta)
-REACT_APP_SOLANA_NETWORK=devnet
+# Solana network to use (Only devnet is supported)
+VITE_SOLANA_NETWORK=devnet
 
 # Backend API endpoint
 VITE_ENDPOINT=https://your-backend-url.com
-``
+```
 
 ## Usage
 
