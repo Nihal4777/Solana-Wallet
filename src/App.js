@@ -3,7 +3,6 @@ import { BrowserRouter, HashRouter, Route, Router, Routes, useNavigate } from 'r
 import { useSelector } from 'react-redux'
 import { CSpinner, CToast, CToastBody, CToaster, CToastHeader, useColorModes } from '@coreui/react'
 import './scss/style.scss'
-
 // We use those styles to show code examples, you should remove them in your application.
 import './scss/examples.scss'
 
@@ -11,7 +10,7 @@ import './scss/examples.scss'
 const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
 
 // Pages
-const Login = React.lazy(() => import('./pages/login'))
+const GetStarted = React.lazy(() => import('./pages/GetStarted'))
 const Logout = React.lazy(() => import('./pages/logout'))
 const Register = React.lazy(() => import('./views/pages/register/Register'))
 const Page404 = React.lazy(() => import('./views/pages/page404/Page404'))
@@ -44,7 +43,7 @@ const App = () => {
         }
       >
         <Routes>
-          <Route exact path="/login" name="Login Page" element={<Login />} />
+          <Route exact path="/get-started" name="Get Started" element={<GetStarted />} />
           <Route exact path="/logout" name="Login Page" element={<Logout />} />
           <Route exact path="/register" name="Register Page" element={<Register />} />
           <Route exact path="/404" name="Page 404" element={<Page404 />} />

@@ -1,89 +1,82 @@
-import React, { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
-import { CCard, CCardBody, CCardHeader, CCol, CRow, CSpinner } from '@coreui/react'
-
+import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
+import { CCard, CCardBody, CCardHeader, CCol, CRow, CSpinner } from '@coreui/react';
+import { address, createSolanaRpc } from '@solana/kit';
 const USDC_MINT = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'
 const EURC_MINT = 'HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr' // Replace with real if needed
 const SOLANA_RPC = 'https://api.devnet.solana.com'
 
 const Dashboard = () => {
-  const selectedAccount = useSelector(state => state.account.selected)
-  const [solBalance, setSolBalance] = useState(null)
-  const [usdcBalance, setUsdcBalance] = useState(null)
-  const [eurcBalance, setEurcBalance] = useState(null)
+  const selectedAccount = useSelector(state => state.accounts.selected)
+  const [solBalance, setSolBalance] = useState(0)
+  const [usdcBalance, setUsdcBalance] = useState(0)
+  const [eurcBalance, setEurcBalance] = useState(0)
 
   useEffect(() => {
-    if (!selectedAccount) return
-
+    // if (!selectedAccount) return
+    console.log(selectedAccount)
+    const rpc = createSolanaRpc(SOLANA_RPC);
     const fetchBalances = async () => {
       // SOL balance
       try {
-        const solRes = await fetch(SOLANA_RPC, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 1,
-            method: 'getBalance',
-            params: [selectedAccount],
-          }),
-        })
-        const solJson = await solRes.json()
-        setSolBalance((solJson.result?.value || 0) / 1e9)
-      } catch {
+        const solRes = await rpc.getAccountInfo(address(selectedAccount.publicKeyBase58)).send()
+        // console.log(solRes)
+        setSolBalance(((solRes.value?.lamports || BigInt(0)) / BigInt(1e9)));
+      } catch (e) {
+        console.log(e)
         setSolBalance(null)
       }
 
-      // USDC balance
-      try {
-        const usdcRes = await fetch(SOLANA_RPC, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 2,
-            method: 'getTokenAccountsByOwner',
-            params: [
-              selectedAccount,
-              { mint: USDC_MINT },
-              { encoding: 'jsonParsed' },
-            ],
-          }),
-        })
-        const usdcJson = await usdcRes.json()
-        const amount =
-          usdcJson.result?.value?.[0]?.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0
-        setUsdcBalance(amount)
-      } catch {
-        setUsdcBalance(null)
+
+      // // USDC balance
+      const tokenAccounts = await rpc.getTokenAccountsByOwner(selectedAccount.publicKeyBase58, {
+        mint: address(USDC_MINT)
+      }, {
+        encoding: "jsonParsed"
+      }).send()
+      console.log(tokenAccounts);
+      if (tokenAccounts.value.length) {
+        const usdtBalance = await rpc
+          .getTokenAccountBalance(tokenAccounts.value[0].pubkey)
+          .send();
+
+        const amount = usdtBalance.value.amount;
+        const decimals = usdtBalance.value.decimals;
+
+        const formattedBalance = Number(amount) / Math.pow(10, decimals);
+
+        console.log(formattedBalance);
+
+        setUsdcBalance(formattedBalance);
       }
 
-      // EURC balance
-      try {
-        const eurcRes = await fetch(SOLANA_RPC, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: 3,
-            method: 'getTokenAccountsByOwner',
-            params: [
-              selectedAccount,
-              { mint: EURC_MINT },
-              { encoding: 'jsonParsed' },
-            ],
-          }),
-        })
-        const eurcJson = await eurcRes.json()
-        const amount =
-          eurcJson.result?.value?.[0]?.account?.data?.parsed?.info?.tokenAmount?.uiAmount || 0
-        setEurcBalance(amount)
-      } catch {
-        setEurcBalance(null)
+
+
+
+      // // EURC balance
+      const eurcTokenAccounts = await rpc.getTokenAccountsByOwner(selectedAccount.publicKeyBase58, {
+        mint: address(EURC_MINT)
+      }, {
+        encoding: "jsonParsed"
+      }).send()
+      console.log(eurcTokenAccounts);
+      if (eurcTokenAccounts.value.length) {
+        const eurcBalance = await rpc
+          .getTokenAccountBalance(eurcTokenAccounts.value[0].pubkey)
+          .send();
+
+        const amount = eurcBalance.value.amount;
+        const decimals = eurcBalance.value.decimals;
+
+        const formattedBalance = Number(amount) / Math.pow(10, decimals);
+
+        console.log(formattedBalance);
+
+        setEurcBalance(formattedBalance);
       }
     }
 
-    fetchBalances() // initial load
+    selectedAccount && fetchBalances() // initial load
     const interval = setInterval(fetchBalances, 10000) // every 10 sec
 
     return () => clearInterval(interval) // cleanup

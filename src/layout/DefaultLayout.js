@@ -1,10 +1,15 @@
-import React, { useEffect, useState } from 'react'
-import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/index'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react';
+import { AppContent, AppSidebar, AppFooter, AppHeader } from '../components/index';
+import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { CToast, CToastBody, CToastClose, CToaster, CToastHeader } from '@coreui/react';
-import { addAccount, changeAccount } from '../store/accountSlice'
-import { useDispatch } from 'react-redux'
+import { CToast, CToastBody, CToaster, CToastHeader } from '@coreui/react';
+import { useDispatch } from 'react-redux';
+import { addAccounts, getAccounts } from '../helper/db';
+import { generateNewWallet } from '../utils/solanaUtils';
+import { encrypt } from '../utils/aesUtils';
+import { addAccount } from '../store/accountSlice';
+
+
 const DefaultLayout = () => {
   const [toastKey, setToastKey] = useState(0)
   let navigate = useNavigate();
@@ -12,30 +17,52 @@ const DefaultLayout = () => {
   const errorMessage = useSelector((state) => state.error.message)
   const id = useSelector((state) => state.error.id)
   const dispatch = useDispatch();
-  useEffect(() => {
-    if (sessionStorage.getItem("auth_token") == null) {
-      navigate("/login");
-    }
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
-    myHeaders.append("Authorization", `Bearer ${sessionStorage.getItem("auth_token")}`);
-    myHeaders.append("Accept", "application/json");
-    fetch(`${import.meta.env.VITE_ENDPOINT}/getContext`, { headers: myHeaders })
-      .then((response) => {
-        if (response.ok) {
-          return response.json()
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      })
-      .then((result) => {
-        if (result.accounts) {
-          dispatch(changeAccount(result.accounts[0].address))
-          dispatch(addAccount(result.accounts));
-        }
 
-      })
-      .catch((error) => console.error(error));
+  useEffect(() => {
+
+    getAccounts().then(accounts => {
+      
+
+      if (accounts.length == 0) {
+        navigate("/get-started")
+      }
+      else {
+
+        // generateNewWallet().then(({ privateKeyBase58, publicKeyBase58 }) => {
+          
+        //   dispatch(addAccount({
+        //     publicKey: publicKeyBase58
+        //   }))
+        //   const iv = crypto.getRandomValues(new Uint8Array(12));
+
+        //   // const encryptedKey = encrypt(privateKey, "P5DPQzZdyeG2a7FoDRD0cw==", iv)
+        //   const encryptedKey = privateKeyBase58;
+
+        //   addAccounts({
+        //     id: "1",
+        //     "name": "wallet 1",
+        //     encryptedKey,
+        //     publicKeyBase58,
+        //     iv: iv.toBase64()
+        //   });
+        // });
+      }
+
+
+
+
+      console.log(accounts);
+    })
+
+
+    //generate wallet
+
+
   });
+
+
+
+
   useEffect(() => {
     if (errorMessage) {
       setToastKey(Date.now())  // generate a fresh key on new message
@@ -49,7 +76,7 @@ const DefaultLayout = () => {
         <div className="body flex-grow-1">
           <AppContent />
         </div>
-        {errorMessage && (<CToaster className="p-3 mb-5" placement="bottom-end" >
+        {false && (<CToaster className="p-3 mb-5" placement="bottom-end" >
           <CToast key={toastKey} animation={false} visible={true}>
             <CToastHeader closeButton>
               <svg

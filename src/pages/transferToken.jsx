@@ -6,16 +6,17 @@ import {
 import { useSelector, useDispatch } from 'react-redux'
 import { showError } from '../store/errorSlice'
 import Swal from 'sweetalert2'
-
+import { address, createSolanaRpc } from '@solana/kit'
+const SOLANA_RPC = 'https://api.devnet.solana.com'
 const TokenTransfer = () => {
   const [recipientAddress, setRecipientAddress] = useState('')
   const [amount, setAmount] = useState('')
   const [selectedToken, setSelectedToken] = useState('')
   const [selectedTokenLabel, setSelectedTokenLabel] = useState('')
-  const [tokenBalance, setTokenBalance] = useState(null)
-
+  const [tokenBalance, setTokenBalance] = useState(0)
+  const rpc = createSolanaRpc(SOLANA_RPC);
   const dispatch = useDispatch()
-  const selectedAccount = useSelector(state => state.account.selected)
+  const selectedAccount = useSelector(state => state.accounts.selected)
   const [isAmountValid, setIsAmountValid] = useState(true)
   const tokens = [
     { value: 'HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr', label: 'EURC' },
@@ -25,28 +26,28 @@ const TokenTransfer = () => {
   const fetchTokenBalance = async () => {
     if (!selectedToken || !selectedAccount) return
     try {
-      const response = await fetch('https://api.devnet.solana.com', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'getTokenAccountsByOwner',
-          params: [
-            selectedAccount,
-            { mint: selectedToken },
-            { encoding: 'jsonParsed' }
-          ]
-        })
-      })
+      const tokenAccounts = await rpc.getTokenAccountsByOwner(selectedAccount.publicKeyBase58, {
+        mint: address(selectedToken)
+      }, {
+        encoding: "jsonParsed"
+      }).send()
+      console.log(tokenAccounts);
+      if (tokenAccounts.value.length) {
+        const usdtBalance = await rpc
+          .getTokenAccountBalance(tokenAccounts.value[0].pubkey)
+          .send();
 
-      const data = await response.json()
-      const accounts = data.result?.value || []
-      if (accounts.length > 0) {
-        const balance = accounts[0]?.account?.data?.parsed?.info?.tokenAmount?.uiAmount
-        setTokenBalance(balance ?? 0)
-      } else {
-        setTokenBalance(0)
+        const amount = usdtBalance.value.amount;
+        const decimals = usdtBalance.value.decimals;
+
+        const formattedBalance = Number(amount) / Math.pow(10, decimals);
+
+        console.log(formattedBalance);
+
+        setTokenBalance(formattedBalance);
+      }
+      else {
+        setTokenBalance(0);
       }
     } catch (err) {
       console.error('Error fetching token balance:', err)
@@ -178,8 +179,8 @@ const TokenTransfer = () => {
                     required
                   />
                 </div>
-                <CButton type="submit" color="primary" disabled={!isAmountValid || !amount 
-                  || parseFloat(amount) === 0 || !selectedToken}> 
+                <CButton type="submit" color="primary" disabled={!isAmountValid || !amount
+                  || parseFloat(amount) === 0 || !selectedToken}>
                   Send {selectedTokenLabel || 'Tokens'}
                 </CButton>
               </CForm>

@@ -3,16 +3,22 @@ const accountSlice = createSlice({
   name: 'account',
   initialState: {
     accounts: [],
-    selected : null
+    selected: null
   },
   reducers: {
     addAccount: (state, action) => {
-      state.accounts=action.payload;
+      state.accounts.push(action.payload);
+      if (state.accounts.length == 1) {
+        state.selected = state.accounts[0]
+      }
     },
-    changeAccount:(state,action)=>{
-      state.selected=action.payload
+    setAccounts: (state, action) => {
+      state.accounts = action.payload;
+      if (state.accounts.length == 1) {
+        state.selected = state.accounts[0]
+      }
     }
   },
 })
-export const { addAccount,changeAccount } = accountSlice.actions
+export const { addAccount,setAccounts } = accountSlice.actions
 export default accountSlice.reducer

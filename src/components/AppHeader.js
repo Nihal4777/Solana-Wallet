@@ -1,74 +1,40 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { NavLink } from 'react-router-dom'
-import { useSelector, useDispatch } from 'react-redux'
-import {
-  CContainer,
-  CDropdown,
-  CDropdownItem,
-  CDropdownMenu,
-  CDropdownToggle,
-  CHeader,
-  CHeaderNav,
-  CHeaderToggler,
-  CNavLink,
-  CNavItem,
-  useColorModes,
-  CFormSelect,
-  CModal,
-  CModalHeader,
-  CModalBody,
-  CModalFooter,
-  CModalTitle,
-  CButton,
-  CTooltip,
-} from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-import {
-  cilBell,
-  cilContrast,
-  cilEnvelopeOpen,
-  cilList,
-  cilMenu,
-  cilCopy,
-  cilMoon,
-  cilSun,
-  cilAccountLogout
-} from '@coreui/icons'
+import { useEffect, useRef, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { CContainer, CDropdown, CDropdownItem, CDropdownMenu, CDropdownToggle, CHeader, CHeaderNav, CHeaderToggler, useColorModes, CFormSelect, CModal, CModalHeader, CModalBody, CModalFooter, CModalTitle, CButton, CTooltip } from '@coreui/react';
+import CIcon from '@coreui/icons-react';
+import { cilContrast, cilMenu, cilCopy, cilMoon, cilSun, cilAccountLogout } from '@coreui/icons';
 
-import { AppBreadcrumb } from './index'
-import { AppHeaderDropdown } from './header/index'
-import { changeAccount } from '../store/accountSlice'
+import { AppBreadcrumb } from './index';
+import { getAccounts } from '../helper/db';
+import { setAccounts } from '../store/accountSlice';
 const AppHeader = () => {
   const headerRef = useRef()
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
 
+  const [accounts, setLocalAccounts] = useState([]);
+
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.changeState.sidebarShow)
-  const accounts = useSelector((state) => state.account.accounts)
   const [visible, setVisible] = useState(false)
   useEffect(() => {
-    console.log(accounts)
-    // setSelected(accounts[0].address)
+    getAccounts().then(accounts => {
+      setLocalAccounts(accounts)
+      dispatch(setAccounts(accounts))
+      setSelected(accounts[0])
+    })
     document.addEventListener('scroll', () => {
       headerRef.current &&
         headerRef.current.classList.toggle('shadow-sm', document.documentElement.scrollTop > 0)
     })
   }, [])
-  const [selected, setSelected] = useState(''); // default selected
-  useEffect(() => {
-    if (accounts.length > 0 && !selected) {
-      const firstAccount = accounts[0].address
-      setSelected(firstAccount)
-      dispatch(changeAccount(firstAccount))
-    }
-  }, [accounts, selected, dispatch])
+  const [selected, setSelected] = useState({}); // default selected
   const handleChange = (e) => {
     const value = e.target.value;
-      dispatch(changeAccount(value))
-      setSelected(value);
-      console.log('Selected account:', value);
+    // dispatch(changeAccount(value))
+    setSelected(value);
+    // console.log('Selected account:', value);
   };
-  const CopyButton = ({text}) => {
+  const CopyButton = ({ text }) => {
     const [tooltipText, setTooltipText] = useState('Copy to clipboard')
 
     const handleCopy = async () => {
@@ -100,13 +66,13 @@ const AppHeader = () => {
           </CHeaderToggler>
           <CHeaderNav>
             <CFormSelect id="solanaAccounts" size="lg" className="my-1" aria-label="Large select example" value={selected} onChange={handleChange}>
-              {accounts.map((account, index) => (
-                <option key={index} value={account.address}>
-                  {`A/C ${index + 1}: ${account.address}`}
+              {accounts.length && accounts.map((account, index) => (
+                <option key={index} value={account}>
+                  {`A/C ${index + 1}: ${account.publicKeyBase58}`}
                 </option>
               ))}
             </CFormSelect>
-            <CopyButton text={selected} />
+            <CopyButton text={selected.publicKeyBase58} />
           </CHeaderNav>
           <CHeaderNav>
             <li className="nav-item py-1">

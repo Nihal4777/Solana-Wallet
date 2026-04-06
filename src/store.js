@@ -19,7 +19,7 @@ const changeState = (state = initialState, { type, ...rest }) => {
 const store = configureStore({
   reducer: {
     changeState: changeState,
-    account: accountReducer,
+    accounts: accountReducer,
     error: errorReducer
   }
 })

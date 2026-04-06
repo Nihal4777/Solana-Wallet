@@ -2,7 +2,7 @@ import React from 'react'
 
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 const Eoa = React.lazy(() => import('./pages/eoa'))
-const Login = React.lazy(() => import('./pages/login'))
+const Login = React.lazy(() => import('./pages/GetStarted'))
 const TransferSolana = React.lazy(() => import('./pages/transferSolana'))
 const TransferToken = React.lazy(() => import('./pages/transferToken'))
 const Colors = React.lazy(() => import('./views/theme/colors/Colors'))

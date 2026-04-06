@@ -3,40 +3,32 @@ import { useSelector, useDispatch } from 'react-redux'
 import { showError } from '../store/errorSlice'
 import Swal from 'sweetalert2'
 import { CButton, CCard, CCardBody, CCardHeader, CCol, CForm, CFormInput, CFormLabel, CRow } from '@coreui/react'
-
+import { address, createSolanaRpc } from '@solana/kit'
+const SOLANA_RPC = 'https://api.devnet.solana.com'
 const Tables = () => {
   const [recipientAddress, setRecipientAddress] = useState('')
   const [amount, setAmount] = useState(0.0)
-  const [balance, setBalance] = useState(null)
+  const [balance, setBalance] = useState(0)
   const dispatch = useDispatch()
-  const selectedAccount = useSelector(state => state.account.selected)
+  const selectedAccount = useSelector(state => state.accounts.selected)
   const [isAmountValid, setIsAmountValid] = useState(true)
+  const rpc = createSolanaRpc(SOLANA_RPC);
   const fetchBalance = async () => {
-    if (!selectedAccount) return
-    try {
-      const response = await fetch('https://api.devnet.solana.com', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'getBalance',
-          params: [selectedAccount],
-        }),
-      })
 
-      const data = await response.json()
-      if (data.result?.value != null) {
-        setBalance(data.result.value / 1e9) // Convert lamports to SOL
-      } else {
-        throw new Error('Failed to fetch balance')
+    if (!selectedAccount) return
+
+
+    try {
+      const response = await rpc.getAccountInfo(address(selectedAccount.publicKeyBase58)).send()
+      if (response?.value != null) {
+        setBalance(response.result.value / 1e9) // Convert lamports to SOL
       }
     } catch (err) {
       console.error('Error fetching balance:', err)
       dispatch(showError('Error fetching balance: ' + err.message))
     }
+
+
   }
 
   useEffect(() => {
@@ -144,7 +136,7 @@ const Tables = () => {
                 <CButton
                   type="submit"
                   color="primary"
-                  disabled={! recipientAddress ||
+                  disabled={!recipientAddress ||
                     !isAmountValid ||
                     !amount ||
                     parseFloat(amount) === 0 ||

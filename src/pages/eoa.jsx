@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import {
+  CBadge,
   CButton,
   CButtonGroup,
   CCard,
@@ -14,6 +15,7 @@ import {
   CTableHead,
   CTableHeaderCell,
   CTableRow,
+  CTooltip,
 } from '@coreui/react'
 import { cilCopy, } from '@coreui/icons'
 import { DocsComponents, DocsExample } from 'src/components'
@@ -111,7 +113,7 @@ const handleShowPrivateKey = async (account) => {
     }
   }
 }
-const handleRemoveAccount = async (account,setAddresses) => {
+const handleRemoveAccount = async (account, setAddresses) => {
   const myHeaders = new Headers();
   myHeaders.append("Authorization", `Bearer ${sessionStorage.getItem("auth_token")}`);
   const result = await Swal.fire({
@@ -157,7 +159,7 @@ const handleRemoveAccount = async (account,setAddresses) => {
   }
 }
 const Tables = () => {
-  const accounts = useSelector((state) => state.account.accounts)
+  const accounts = useSelector((state) => state.accounts.accounts)
   let [addresses, setAddresses] = useState([]);
 
   useEffect(() => {
@@ -171,24 +173,12 @@ const Tables = () => {
       <CRow className="mb-4"> <CCol>
         <CCard>
           <CCardBody>
-            <CButton onClick={() => {
-              const myHeaders = new Headers();
-              myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
-              myHeaders.append("Authorization", `Bearer ${sessionStorage.getItem("auth_token")}`);
-              myHeaders.append("Accept", "application/json");
-              const requestOptions = {
-                method: "GET",
-                redirect: "follow",
-                headers: myHeaders
-              };
-
-              fetch(`${import.meta.env.VITE_ENDPOINT}/generateNewAccount`, requestOptions)
-                .then((response) => response.json())
-                .then((result) => {
-                  setAddresses(result.accounts)
-                })
-                .catch((error) => console.error(error));
-            }} color="primary">Generate New EOA Address</CButton>
+            <CButton color="primary" disabled>
+              Generate New EOA Address{" "}
+              <CBadge color="light" textColor="dark" className="ms-2">
+                Coming Soon
+              </CBadge>
+            </CButton>
           </CCardBody>
         </CCard>
       </CCol></CRow>
@@ -209,15 +199,15 @@ const Tables = () => {
                   {addresses && addresses.map((address, i) => (
                     <CTableRow key={i + 1}>
                       <CTableHeaderCell scope="row">{i + 1}</CTableHeaderCell>
-                      <CTableDataCell>{address.address}</CTableDataCell>
+                      <CTableDataCell>{address.publicKeyBase58}</CTableDataCell>
                       <CTableDataCell><CButton color="primary" onClick={() => {
-                        navigator.clipboard.writeText(address.address)
+                        navigator.clipboard.writeText(address.publicKeyBase58)
                       }}> <CIcon icon={cilCopy} size="md" /></CButton></CTableDataCell>
                       <CTableDataCell><CButton color="warning" onClick={() => {
                         handleShowPrivateKey(address)
                       }}> View Secret</CButton></CTableDataCell>
                       <CTableDataCell><CButton color="danger" onClick={() => {
-                        handleRemoveAccount(address,setAddresses)
+                        handleRemoveAccount(address, setAddresses)
                       }}> Remove Account</CButton></CTableDataCell>
 
 
