@@ -1,7 +1,6 @@
-// utils/crypto.js
 export const encrypt = async (text, base64Key, iv) => {
   // Convert Base64 key to Uint8Array
-  const keyBytes = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
+  const keyBytes = Uint8Array.fromBase64(base64Key)
 
   // Import key for AES-GCM
   const cryptoKey = await crypto.subtle.importKey(
@@ -22,15 +21,13 @@ export const encrypt = async (text, base64Key, iv) => {
     cryptoKey,
     data
   );
-  // // Decode back to string
-  // const decoder = new TextDecoder();
-  // return atob() decoder.decode(encrypted);// return as bytes
+
+  return new Uint8Array(encrypted).toBase64();
 };
 
 export const decrypt = async (cipherBytes, base64Key, iv) => {
   // Convert Base64 key to Uint8Array
-  const keyBytes = Uint8Array.from(atob(base64Key), c => c.charCodeAt(0));
-
+  const keyBytes = Uint8Array.fromBase64(base64Key)
   // Import key for AES-GCM
   const cryptoKey = await crypto.subtle.importKey(
     "raw",
@@ -44,10 +41,10 @@ export const decrypt = async (cipherBytes, base64Key, iv) => {
   const decrypted = await crypto.subtle.decrypt(
     { name: "AES-GCM", iv: iv },
     cryptoKey,
-    cipherBytes
+    Uint8Array.fromBase64(cipherBytes).buffer
   );
 
   // Decode back to string
   const decoder = new TextDecoder();
   return decoder.decode(decrypted);
-};
+};  
