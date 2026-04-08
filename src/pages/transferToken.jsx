@@ -7,6 +7,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { showError } from '../store/errorSlice'
 import Swal from 'sweetalert2'
 import { address, createSolanaRpc } from '@solana/kit'
+import { transferToken } from '../utils/solanaUtils'
 const SOLANA_RPC = 'https://api.devnet.solana.com'
 const TokenTransfer = () => {
   const [recipientAddress, setRecipientAddress] = useState('')
@@ -63,46 +64,31 @@ const TokenTransfer = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    const myHeaders = new Headers()
-    myHeaders.append("Content-Type", "application/x-www-form-urlencoded")
-    myHeaders.append("Authorization", `Bearer ${sessionStorage.getItem("auth_token")}`)
-    myHeaders.append("Accept", "application/json")
 
-    const urlencoded = new URLSearchParams()
-    urlencoded.append("value", amount)
-    urlencoded.append("fromAddress", selectedAccount)
-    urlencoded.append("tokenAddress", selectedToken)
-    urlencoded.append("toAddress", recipientAddress)
 
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: urlencoded,
-      redirect: "follow"
-    }
 
-    fetch(`${import.meta.env.VITE_ENDPOINT}/transferToken`, requestOptions)
+    transferToken(recipientAddress, amount * 1000000, selectedToken, selectedAccount)
       .then(async (response) => {
-        const data = await response.json()
 
-        if (!response.ok) {
-          let errorMessage = data.error
-          if (data.errors) {
-            errorMessage += ': ' + Object.entries(data.errors)
-              .map(([field, msg]) => `${field} - ${msg}`)
-              .join(', ')
-          }
-          throw new Error(errorMessage)
-        } else {
-          Swal.fire({
-            title: "Transaction successful",
-            html: `<a href="https://solana.fm/tx/${data.txnHash}?cluster=devnet-alpha" target="_blank">View in Solscan</a>`,
-            icon: "success"
-          })
-          setRecipientAddress("")
-          setAmount(0.0)
-          fetchTokenBalance() // Refresh after transfer
-        }
+
+        // if (!response.ok) {
+        //   let errorMessage = data.error
+        //   if (data.errors) {
+        //     errorMessage += ': ' + Object.entries(data.errors)
+        //       .map(([field, msg]) => `${field} - ${msg}`)
+        //       .join(', ')
+        //   }
+        //   throw new Error(errorMessage)
+        // } else {
+        Swal.fire({
+          title: "Transaction successful",
+          html: `<a href="https://solana.fm/tx/${response}?cluster=devnet-alpha" target="_blank">View in Solscan</a>`,
+          icon: "success"
+        })
+        setRecipientAddress("")
+        setAmount(0.0)
+        fetchTokenBalance() // Refresh after transfer
+        // }
 
         dispatch(showError("Transaction successful ✅"))
       })

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { CCard, CCardBody, CCardHeader, CCol, CRow, CSpinner } from '@coreui/react';
 import { address, createSolanaRpc } from '@solana/kit';
+import { transferSol, transferToken } from '../../utils/solanaUtils';
 const USDC_MINT = '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU'
 const EURC_MINT = 'HzwqbKZw8HxMN6bF2yFZNrht3c2iXXzpKcFu7uBEDKtr' // Replace with real if needed
 const SOLANA_RPC = 'https://api.devnet.solana.com'
@@ -34,7 +35,7 @@ const Dashboard = () => {
       }, {
         encoding: "jsonParsed"
       }).send()
-      console.log(tokenAccounts);
+      // console.log(tokenAccounts);
       if (tokenAccounts.value.length) {
         const usdtBalance = await rpc
           .getTokenAccountBalance(tokenAccounts.value[0].pubkey)
@@ -78,9 +79,37 @@ const Dashboard = () => {
 
     selectedAccount && fetchBalances() // initial load
     const interval = setInterval(fetchBalances, 10000) // every 10 sec
-
+    //  selectedAccount && transferToken("d8ZLgFUjrugT4ce645Gc8JmxPX4M7UC1BadZHXsApX1","1000000","4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",selectedAccount)
     return () => clearInterval(interval) // cleanup
+
+
+
   }, [selectedAccount])
+
+ useEffect(() => {
+
+        // generateNewWallet().then(({ privateKeyBase58, publicKeyBase58 }) => {
+        //     console.log(privateKeyBase58);
+        //     console.log(publicKeyBase58);
+        //     addAccounts({
+        //         encryptedKey: privateKeyBase58,
+        //         publicKeyBase58: publicKeyBase58,
+        //         iv: "0+LUE9I255VNL54k",
+        //         name: "wallet 1",
+        //         id: "1"
+        //     }).then(console.log)
+
+        // });
+
+
+       
+
+
+
+
+    }, [])
+
+
 
   const renderCard = (label, balance) => (
     <CCol xs={12} md={4} key={label}>

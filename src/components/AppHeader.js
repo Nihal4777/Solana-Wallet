@@ -18,6 +18,7 @@ const AppHeader = () => {
   const [visible, setVisible] = useState(false)
   useEffect(() => {
     getAccounts().then(accounts => {
+      console.log(accounts)
       setLocalAccounts(accounts)
       dispatch(setAccounts(accounts))
       setSelected(accounts[0])

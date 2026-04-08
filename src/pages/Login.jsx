@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
 import { useSelector } from 'react-redux'
 import { CCard, CCardBody, CCardGroup, CCol, CContainer, CForm, CRow, CSpinner } from '@coreui/react'
 import solLogo from 'src/assets/brand/svgviewer-png-output.png'
 import { useNavigate } from 'react-router-dom'
 import { encrypt, decrypt } from '../utils/aesUtils'
+import { generateNewWallet, transferSol, transferToken } from '../utils/solanaUtils'
+import { addAccounts } from '../helper/db'
 const Login = () => {
     const storedTheme = useSelector((state) => state.changeState.theme)
     const navigate = useNavigate(); const dispatch = useDispatch()
@@ -12,6 +14,30 @@ const Login = () => {
     function handleLogin(e) {
         e.preventDefault();
     }
+  const account = useSelector((state) => state.accounts.selected);
+
+    useEffect(() => {
+
+        // generateNewWallet().then(({ privateKeyBase58, publicKeyBase58 }) => {
+        //     console.log(privateKeyBase58);
+        //     console.log(publicKeyBase58);
+        //     addAccounts({
+        //         encryptedKey: privateKeyBase58,
+        //         publicKeyBase58: publicKeyBase58,
+        //         iv: "0+LUE9I255VNL54k",
+        //         name: "wallet 1",
+        //         id: "1"
+        //     }).then(console.log)
+
+        // });
+
+
+        // transferSol("d8ZLgFUjrugT4ce645Gc8JmxPX4M7UC1BadZHXsApX1",1000,account);
+        // console.log(account)
+
+        transferToken("d8ZLgFUjrugT4ce645Gc8JmxPX4M7UC1BadZHXsApX1","900","4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",account)
+
+    }, [])
 
 
     return (

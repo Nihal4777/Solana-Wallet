@@ -4,6 +4,7 @@ import { showError } from '../store/errorSlice'
 import Swal from 'sweetalert2'
 import { CButton, CCard, CCardBody, CCardHeader, CCol, CForm, CFormInput, CFormLabel, CRow } from '@coreui/react'
 import { address, createSolanaRpc } from '@solana/kit'
+import { transferSol } from '../utils/solanaUtils'
 const SOLANA_RPC = 'https://api.devnet.solana.com'
 const Tables = () => {
   const [recipientAddress, setRecipientAddress] = useState('')
@@ -14,15 +15,13 @@ const Tables = () => {
   const [isAmountValid, setIsAmountValid] = useState(true)
   const rpc = createSolanaRpc(SOLANA_RPC);
   const fetchBalance = async () => {
-
     if (!selectedAccount) return
-
 
     try {
       const response = await rpc.getAccountInfo(address(selectedAccount.publicKeyBase58)).send()
-      if (response?.value != null) {
-        setBalance(response.result.value / 1e9) // Convert lamports to SOL
-      }
+      const balance = (Number(response.value?.lamports)  || 0) / 1e9;
+      console.log(typeof balance)
+        setBalance(balance) // Convert lamports to SOL
     } catch (err) {
       console.error('Error fetching balance:', err)
       dispatch(showError('Error fetching balance: ' + err.message))
@@ -38,47 +37,32 @@ const Tables = () => {
   }, [selectedAccount])
 
   const handleSubmit = (e) => {
+
     e.preventDefault()
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
-    myHeaders.append("Authorization", `Bearer ${sessionStorage.getItem("auth_token")}`);
-    myHeaders.append("Accept", "application/json");
 
-    const urlencoded = new URLSearchParams();
-    urlencoded.append("value", amount);
-    urlencoded.append("fromAddress", selectedAccount);
-    urlencoded.append("toAddress", recipientAddress);
-
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: urlencoded,
-      redirect: "follow"
-    };
-
-    fetch(`${import.meta.env.VITE_ENDPOINT}/transferSol`, requestOptions)
+    transferSol(recipientAddress, amount * 1000000000, selectedAccount)
       .then(async (response) => {
-        const data = await response.json()
+        
 
-        if (!response.ok) {
-          let errorMessage = data.error
-          if (data.errors) {
-            errorMessage += ': ' + Object.entries(data.errors)
-              .map(([field, msg]) => `${field} - ${msg}`)
-              .join(', ')
-          }
-          throw new Error(errorMessage)
-        } else {
+        // if (!response.ok) {
+        //   let errorMessage = data.error
+        //   if (data.errors) {
+        //     errorMessage += ': ' + Object.entries(data.errors)
+        //       .map(([field, msg]) => `${field} - ${msg}`)
+        //       .join(', ')
+        //   }
+        //   throw new Error(errorMessage)
+        // } else {
           Swal.fire({
             title: "Transaction successful",
-            html: `<a href="https://solana.fm/tx/${data.txnHash}?cluster=devnet-alpha" target="_blank">View in Solscan</a>`,
+            html: `<a href="https://solana.fm/tx/${response}?cluster=devnet-alpha" target="_blank">View in Solscan</a>`,
             icon: "success"
           })
           setRecipientAddress("")
           setAmount(0.0)
           fetchBalance() // Refresh balance after transaction
-        }
-        dispatch(showError("Transaction successful ✅"))
+        // }
+        // dispatch(showError("Transaction successful ✅"))
       })
       .catch((error) => {
         console.error(error)
