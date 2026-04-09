@@ -5,6 +5,8 @@ import { useSelector } from 'react-redux'
 import { CCard, CCardBody, CCardGroup, CCol, CContainer, CForm, CRow, CSpinner } from '@coreui/react'
 import solLogo from 'src/assets/brand/svgviewer-png-output.png'
 import { useNavigate } from 'react-router-dom'
+import { generateNewWallet } from '../utils/solanaUtils'
+import { addAccounts } from '../helper/db'
 const GetStarted = () => {
     const storedTheme = useSelector((state) => state.changeState.theme)
     const [searchParams] = useSearchParams(); const code = searchParams.get("code");
@@ -36,7 +38,6 @@ const GetStarted = () => {
             headers: {
                 "content-type": "application/json"
             }
-
         })
     }
 
@@ -64,10 +65,24 @@ const GetStarted = () => {
                 // send it to server for verification
                 console.log(JSON.stringify(publicKeyCredential));
                 const response = await completeRegistration(result.user.id, publicKeyCredential);
-                if (response.success) {
+                response.json().then(jsonResponse => {
+                    if (jsonResponse.success) {
+                        generateNewWallet().then(({ privateKeyBase58, publicKeyBase58 }) => {
+                            //     console.log(privateKeyBase58);
+                            //     console.log(publicKeyBase58);
+                            console.log(jsonResponse)
+                            addAccounts({
+                                encryptedKey: privateKeyBase58,
+                                publicKeyBase58: publicKeyBase58,
+                                iv: "0+LUE9I255VNL54k",
+                                name: "wallet 1",
+                                id: jsonResponse.id
+                            }).then(console.log)
+                        }
+                        )
+                    }
+                })
 
-
-                }
             })
             .catch((error) => console.error(error))
             .finally(() => {

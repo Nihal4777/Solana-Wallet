@@ -4,19 +4,82 @@ import { useSelector } from 'react-redux'
 import { CCard, CCardBody, CCardGroup, CCol, CContainer, CForm, CRow, CSpinner } from '@coreui/react'
 import solLogo from 'src/assets/brand/svgviewer-png-output.png'
 import { useNavigate } from 'react-router-dom'
-import { encrypt, decrypt } from '../utils/aesUtils'
-import { generateNewWallet, transferSol, transferToken } from '../utils/solanaUtils'
-import { addAccounts } from '../helper/db'
+import { getAccounts } from '../helper/db'
+import { setAccounts } from '../store/accountSlice'
 const Login = () => {
     const storedTheme = useSelector((state) => state.changeState.theme)
     const navigate = useNavigate(); const dispatch = useDispatch()
-    const [isLoggingIn, setLoggingIn] = useState(false);
+    const [isClicked, setClicked] = useState(false);
     function handleLogin(e) {
         e.preventDefault();
+        setClicked(true)
+        fetch(`${import.meta.env.VITE_ENDPOINT}/authenticate/options`, {
+            method: 'POST',
+            body: JSON.stringify(
+                {
+                    id: account.id
+                }
+            ),
+            headers: {
+                "content-type": "application/json"
+            }
+        })
+            .then((response) => {
+                if (response.ok) {
+                    return response.json()
+                }
+                throw new Error(`HTTP error! status: ${response.status}`);
+            })
+            .then(async (result) => {
+                const publicKey = {
+                    ...result, challenge: base64urlToUint8Array(result.challenge),
+                    allowCredentials: result.allowCredentials.map(cred => {
+                        return {
+                            ...cred,
+                            id: base64urlToUint8Array(cred.id)
+                        }
+                    })
+                }
+                let credential = await navigator.credentials.get({
+                    publicKey
+                })
+                fetch(`${import.meta.env.VITE_ENDPOINT}/authenticate/verify`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        id: account.id,
+                        credential
+                    }),
+                    headers: {
+                        "content-type": "application/json"
+                    }
+                }).then(response.json()).then(jsonResponse => {
+                    console.log(jsonResponse);
+                })
+
+
+
+
+            }).catch((error) => console.error(error))
+            .finally(() => {
+                setClicked(false);
+            })
+
     }
-  const account = useSelector((state) => state.accounts.selected);
+    const [account, setAccount] = useState({});
 
     useEffect(() => {
+
+        getAccounts().then(accounts => {
+            if (!accounts.length) {
+                navigate("/get-started");
+            }
+            console.log(accounts)
+            dispatch(setAccounts(accounts))
+            setAccount(accounts[0])
+
+
+        });
+
 
         // generateNewWallet().then(({ privateKeyBase58, publicKeyBase58 }) => {
         //     console.log(privateKeyBase58);
@@ -32,12 +95,17 @@ const Login = () => {
         // });
 
 
-        // transferSol("d8ZLgFUjrugT4ce645Gc8JmxPX4M7UC1BadZHXsApX1",1000,account);
-        // console.log(account)
 
-        transferToken("d8ZLgFUjrugT4ce645Gc8JmxPX4M7UC1BadZHXsApX1","900","4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",account)
 
     }, [])
+
+    function base64urlToUint8Array(base64url) {
+        const padding = '='.repeat((4 - (base64url.length % 4)) % 4);
+        const base64 = (base64url + padding)
+            .replace(/-/g, '+')
+            .replace(/_/g, '/');
+        return Uint8Array.fromBase64(base64)
+    }
 
 
     return (
@@ -81,11 +149,11 @@ const Login = () => {
                                         <CRow>
                                             <CCol xs={12}>
                                                 <div className="d-grid gap-2 col-12 mx-auto">
-                                                    {isLoggingIn ? (
+                                                    {isClicked ? (
                                                         <CSpinner variant="grow" className="mx-auto" />
                                                     ) : (
                                                         <button
-                                                            className={`mx-4 my-2 btn btn-primary ${isLoggingIn ? 'disabled' : ''
+                                                            className={`mx-4 my-2 btn btn-primary ${isClicked ? 'disabled' : ''
                                                                 }`}
                                                             onClick={handleLogin}
                                                         >
