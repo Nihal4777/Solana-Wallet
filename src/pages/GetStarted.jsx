@@ -6,6 +6,7 @@ import { CCard, CCardBody, CCardGroup, CCol, CContainer, CForm, CRow, CSpinner }
 import solLogo from 'src/assets/brand/svgviewer-png-output.png'
 import { useNavigate } from 'react-router-dom'
 import { generateNewWallet } from '../utils/solanaUtils'
+import { encrypt } from '../utils/aesUtils'
 import { addAccounts } from '../helper/db'
 const GetStarted = () => {
     const storedTheme = useSelector((state) => state.changeState.theme)
@@ -13,9 +14,8 @@ const GetStarted = () => {
     const navigate = useNavigate(); const dispatch = useDispatch()
     const [isClicked, setClicked] = useState(false);
     useEffect(() => {
-        if (code != null) {
-
-        }
+        //     const iv = crypto.getRandomValues(new Uint8Array(12));
+        //    const encryptedKey = encrypt("1", "thzHlrTRAkdvitrPPxe/Rw==", iv)
     }, []);
 
 
@@ -60,7 +60,7 @@ const GetStarted = () => {
                 throw new Error(`HTTP error! status: ${response.status}`);
             })
             .then(async (result) => {
-                //begin passkey generation
+                // begin passkey generation
                 const publicKeyCredential = await beginPasskeyGeneration(result);
                 // send it to server for verification
                 console.log(JSON.stringify(publicKeyCredential));
@@ -71,13 +71,20 @@ const GetStarted = () => {
                             //     console.log(privateKeyBase58);
                             //     console.log(publicKeyBase58);
                             console.log(jsonResponse)
-                            addAccounts({
-                                encryptedKey: privateKeyBase58,
-                                publicKeyBase58: publicKeyBase58,
-                                iv: "0+LUE9I255VNL54k",
-                                name: "wallet 1",
-                                id: jsonResponse.id
-                            }).then(console.log)
+                            const iv = crypto.getRandomValues(new Uint8Array(12));
+
+                            encrypt(privateKeyBase58, jsonResponse.key, iv).then(encryptedKey => {
+                                addAccounts({
+                                    encryptedKey: encryptedKey,
+                                    publicKeyBase58: publicKeyBase58,
+                                    iv: iv.toBase64(),
+                                    name: "wallet 1",
+                                    id: jsonResponse.id
+                                }).then((response) => {
+                                    navigate("/dashboard")
+                                })
+                            });
+
                         }
                         )
                     }

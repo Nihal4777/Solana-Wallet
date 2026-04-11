@@ -2,15 +2,18 @@ import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { showError } from '../store/errorSlice'
 import Swal from 'sweetalert2'
-import { CButton, CCard, CCardBody, CCardHeader, CCol, CForm, CFormInput, CFormLabel, CRow } from '@coreui/react'
+import { CButton, CCard, CCardBody, CCardHeader, CCol, CForm, CFormInput, CFormLabel, CRow, CSpinner } from '@coreui/react'
 import { address, createSolanaRpc } from '@solana/kit'
 import { transferSol } from '../utils/solanaUtils'
+import { fetchEncryptionKey } from "../helper/authenticationHelper";
+import { decrypt } from '../utils/aesUtils'
 const SOLANA_RPC = 'https://api.devnet.solana.com'
 const Tables = () => {
   const [recipientAddress, setRecipientAddress] = useState('')
   const [amount, setAmount] = useState(0.0)
   const [balance, setBalance] = useState(0)
   const dispatch = useDispatch()
+  const [inProgress, setInProgress] = useState(false);
   const selectedAccount = useSelector(state => state.accounts.selected)
   const [isAmountValid, setIsAmountValid] = useState(true)
   const rpc = createSolanaRpc(SOLANA_RPC);
@@ -19,9 +22,8 @@ const Tables = () => {
 
     try {
       const response = await rpc.getAccountInfo(address(selectedAccount.publicKeyBase58)).send()
-      const balance = (Number(response.value?.lamports)  || 0) / 1e9;
-      console.log(typeof balance)
-        setBalance(balance) // Convert lamports to SOL
+      const balance = (Number(response.value?.lamports) || 0) / 1e9;
+      setBalance(balance) // Convert lamports to SOL
     } catch (err) {
       console.error('Error fetching balance:', err)
       dispatch(showError('Error fetching balance: ' + err.message))
@@ -37,37 +39,34 @@ const Tables = () => {
   }, [selectedAccount])
 
   const handleSubmit = (e) => {
-
     e.preventDefault()
+    setInProgress(true)
 
-    transferSol(recipientAddress, amount * 1000000000, selectedAccount)
-      .then(async (response) => {
-        
-
-        // if (!response.ok) {
-        //   let errorMessage = data.error
-        //   if (data.errors) {
-        //     errorMessage += ': ' + Object.entries(data.errors)
-        //       .map(([field, msg]) => `${field} - ${msg}`)
-        //       .join(', ')
-        //   }
-        //   throw new Error(errorMessage)
-        // } else {
-          Swal.fire({
-            title: "Transaction successful",
-            html: `<a href="https://solana.fm/tx/${response}?cluster=devnet-alpha" target="_blank">View in Solscan</a>`,
-            icon: "success"
+    fetchEncryptionKey(selectedAccount.id).then(key => {
+      decrypt(selectedAccount.encryptedKey, key, Uint8Array.fromBase64(selectedAccount.iv)).then(decryptedKey => {
+        transferSol(recipientAddress, amount * 1000000000, decryptedKey)
+          .then(async (response) => {
+            Swal.fire({
+              title: "Transaction successful",
+              html: `<a href="https://solscan.io/tx/${response}?cluster=devnet" target="_blank">View in Solscan</a>`,
+              icon: "success"
+            })
+            setRecipientAddress("")
+            setAmount(0.0)
+            fetchBalance() // Refresh balance after transaction
+            // }
+            // dispatch(showError("Transaction successful ✅"))
           })
-          setRecipientAddress("")
-          setAmount(0.0)
-          fetchBalance() // Refresh balance after transaction
-        // }
-        // dispatch(showError("Transaction successful ✅"))
-      })
-      .catch((error) => {
-        console.error(error)
-        dispatch(showError("We're experiencing an unexpected issue. Please try again later.:" + error.message))
-      })
+          .catch((error) => {
+            console.error(error)
+            dispatch(showError("We're experiencing an unexpected issue. Please try again later.:" + error.message))
+          })
+      });
+
+    }).finally(() => {
+      setInProgress(false)
+    })
+      ;
   }
 
   return (
@@ -127,7 +126,7 @@ const Tables = () => {
                     balance === null
                   }
                 >
-                  Send SOL
+                  {inProgress ? <CSpinner variant="grow" className="mx-auto" /> : "Send SOL"}
                 </CButton>
               </CForm>
             </CCardBody>

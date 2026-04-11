@@ -52,13 +52,14 @@ const Login = () => {
                     headers: {
                         "content-type": "application/json"
                     }
-                }).then(response.json()).then(jsonResponse => {
-                    console.log(jsonResponse);
+                }).then(response => {
+                    if (response.ok) {
+                        return response.json()
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }).then(jsonResponse => {
+                    navigate("/dashboard")
                 })
-
-
-
-
             }).catch((error) => console.error(error))
             .finally(() => {
                 setClicked(false);

@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import {
   CButton, CCard, CCardBody, CCardHeader, CCol, CForm, CFormInput,
-  CFormLabel, CFormSelect, CRow
+  CFormLabel, CFormSelect, CRow,
+  CSpinner
 } from '@coreui/react'
 import { useSelector, useDispatch } from 'react-redux'
 import { showError } from '../store/errorSlice'
 import Swal from 'sweetalert2'
 import { address, createSolanaRpc } from '@solana/kit'
 import { transferToken } from '../utils/solanaUtils'
+import { fetchEncryptionKey } from '../helper/authenticationHelper'
+import { decrypt } from '../utils/aesUtils'
 const SOLANA_RPC = 'https://api.devnet.solana.com'
 const TokenTransfer = () => {
   const [recipientAddress, setRecipientAddress] = useState('')
@@ -17,6 +20,7 @@ const TokenTransfer = () => {
   const [tokenBalance, setTokenBalance] = useState(0)
   const rpc = createSolanaRpc(SOLANA_RPC);
   const dispatch = useDispatch()
+  const [inProgress, setInProgress] = useState(false);
   const selectedAccount = useSelector(state => state.accounts.selected)
   const [isAmountValid, setIsAmountValid] = useState(true)
   const tokens = [
@@ -62,40 +66,36 @@ const TokenTransfer = () => {
     return () => clearInterval(interval)
   }, [selectedToken, selectedAccount])
 
+
   const handleSubmit = (e) => {
     e.preventDefault()
+    setInProgress(true)
 
+    fetchEncryptionKey(selectedAccount.id).then(key => {
+      decrypt(selectedAccount.encryptedKey, key, Uint8Array.fromBase64(selectedAccount.iv)).then(decryptedKey => {
+        transferToken(recipientAddress, amount * 1000000, selectedToken, decryptedKey)
+          .then(async (response) => {
+            Swal.fire({
+              title: "Transaction successful",
+              html: `<a href="https://solscan.io/tx/${response}?cluster=devnet" target="_blank">View in Solscan</a>`,
+              icon: "success"
+            })
+            setRecipientAddress("")
+            setAmount(0.0)
+            fetchTokenBalance() // Refresh after transfer
+            // }
+            // dispatch(showError("Transaction successful ✅"))
+          })
+          .catch((error) => {
+            console.error(error)
+            dispatch(showError("We're experiencing an unexpected issue. Please try again later.:" + error.message))
+          })
+      });
 
-
-    transferToken(recipientAddress, amount * 1000000, selectedToken, selectedAccount)
-      .then(async (response) => {
-
-
-        // if (!response.ok) {
-        //   let errorMessage = data.error
-        //   if (data.errors) {
-        //     errorMessage += ': ' + Object.entries(data.errors)
-        //       .map(([field, msg]) => `${field} - ${msg}`)
-        //       .join(', ')
-        //   }
-        //   throw new Error(errorMessage)
-        // } else {
-        Swal.fire({
-          title: "Transaction successful",
-          html: `<a href="https://solana.fm/tx/${response}?cluster=devnet-alpha" target="_blank">View in Solscan</a>`,
-          icon: "success"
-        })
-        setRecipientAddress("")
-        setAmount(0.0)
-        fetchTokenBalance() // Refresh after transfer
-        // }
-
-        dispatch(showError("Transaction successful ✅"))
-      })
-      .catch((error) => {
-        console.error(error)
-        dispatch(showError("We're experiencing an unexpected issue. Please try again later.:" + error.message))
-      })
+    }).finally(() => {
+      setInProgress(false)
+    })
+      ;
   }
 
   return (
@@ -167,7 +167,7 @@ const TokenTransfer = () => {
                 </div>
                 <CButton type="submit" color="primary" disabled={!isAmountValid || !amount
                   || parseFloat(amount) === 0 || !selectedToken}>
-                  Send {selectedTokenLabel || 'Tokens'}
+                  {!inProgress ? ("Send" + selectedTokenLabel || 'Tokens') : <CSpinner variant="grow" className="mx-auto" />}
                 </CButton>
               </CForm>
             </CCardBody>

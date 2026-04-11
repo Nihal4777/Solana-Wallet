@@ -21,40 +21,14 @@ const DefaultLayout = () => {
   useEffect(() => {
 
     getAccounts().then(accounts => {
-      
+
 
       if (accounts.length == 0) {
         navigate("/get-started")
       }
       else {
-
-        // generateNewWallet().then(({ privateKeyBase58, publicKeyBase58 }) => {
-          
-        //   dispatch(addAccount({
-        //     publicKey: publicKeyBase58
-        //   }))
-        //   const iv = crypto.getRandomValues(new Uint8Array(12));
-
-        //   // const encryptedKey = encrypt(privateKey, "P5DPQzZdyeG2a7FoDRD0cw==", iv)
-        //   const encryptedKey = privateKeyBase58;
-
-        //   addAccounts({
-        //     id: "1",
-        //     "name": "wallet 1",
-        //     encryptedKey,
-        //     publicKeyBase58,
-        //     iv: iv.toBase64()
-        //   });
-        // });
       }
-
-
-
-
-      console.log(accounts);
     })
-
-
     //generate wallet
 
 

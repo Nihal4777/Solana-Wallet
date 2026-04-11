@@ -4,26 +4,6 @@ import bs58 from "bs58";
 
 import { findAssociatedTokenPda, getCreateAssociatedTokenIdempotentInstructionAsync, getTransferInstruction, TOKEN_PROGRAM_ADDRESS } from '@solana-program/token';
 
-// export const getSolBalance = async (address) => {
-
-//   const pubkey = new PublicKey(address)
-//   const lamports = await connection.getBalance(pubkey)
-//   return (lamports / 1e9).toFixed(4)
-// }
-
-// export const getTokenBalance = async (owner, mint) => {
-//   const ownerPubkey = new PublicKey(owner)
-//   const mintPubkey = new PublicKey(mint)
-//   const ata = await getAssociatedTokenAddress(mintPubkey, ownerPubkey)
-//   try {
-//     const accountInfo = await getAccount(connection, ata)
-//     return (Number(accountInfo.amount) / 1e6).toFixed(2) // USDC/EURC usually have 6 decimals
-//   } catch (err) {
-//     return '0.00'
-//   }
-// }
-
-
 const rpc = createSolanaRpc(import.meta.env.VITE_SOLANA_RPC);
 
 export const generateNewWallet = async () => {
@@ -58,9 +38,8 @@ export const generateNewWallet = async () => {
 }
 
 
-export const transferSol = async (destination, lamports, account) => {
-  console.log(account)
-  const privateKey = account.encryptedKey;
+export const transferSol = async (destination, lamports, privateKey) => {
+
 
   const privateKeyBytes = bs58.decode(privateKey);
   const privateKey32 = privateKeyBytes.slice(0, 32);
@@ -109,9 +88,7 @@ export const transferSol = async (destination, lamports, account) => {
 
 }
 
-export const transferToken = async (destination, tokenAmount, mintAdddress, account) => {
-  console.log(account)
-  const privateKey = account.encryptedKey;
+export const transferToken = async (destination, tokenAmount, mintAdddress, privateKey) => {
 
   const privateKeyBytes = bs58.decode(privateKey);
   const privateKey32 = privateKeyBytes.slice(0, 32);

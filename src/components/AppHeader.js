@@ -7,6 +7,7 @@ import { cilContrast, cilMenu, cilCopy, cilMoon, cilSun, cilAccountLogout } from
 import { AppBreadcrumb } from './index';
 import { getAccounts } from '../helper/db';
 import { setAccounts } from '../store/accountSlice';
+import { useNavigate } from 'react-router-dom';
 const AppHeader = () => {
   const headerRef = useRef()
   const { colorMode, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
@@ -16,8 +17,14 @@ const AppHeader = () => {
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.changeState.sidebarShow)
   const [visible, setVisible] = useState(false)
+  const navigate = useNavigate();
   useEffect(() => {
     getAccounts().then(accounts => {
+
+      if (!accounts.length > 0) {
+        navigate("/get-started")
+
+      }
       console.log(accounts)
       setLocalAccounts(accounts)
       dispatch(setAccounts(accounts))
