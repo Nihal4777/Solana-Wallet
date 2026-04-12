@@ -13,10 +13,6 @@ const GetStarted = () => {
     const [searchParams] = useSearchParams(); const code = searchParams.get("code");
     const navigate = useNavigate(); const dispatch = useDispatch()
     const [isClicked, setClicked] = useState(false);
-    useEffect(() => {
-        //     const iv = crypto.getRandomValues(new Uint8Array(12));
-        //    const encryptedKey = encrypt("1", "thzHlrTRAkdvitrPPxe/Rw==", iv)
-    }, []);
 
 
 
