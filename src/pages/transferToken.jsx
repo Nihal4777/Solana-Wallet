@@ -67,35 +67,44 @@ const TokenTransfer = () => {
   }, [selectedToken, selectedAccount])
 
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setInProgress(true)
 
-    fetchEncryptionKey(selectedAccount.id).then(key => {
-      decrypt(selectedAccount.encryptedKey, key, Uint8Array.fromBase64(selectedAccount.iv)).then(decryptedKey => {
-        transferToken(recipientAddress, amount * 1000000, selectedToken, decryptedKey)
-          .then(async (response) => {
-            Swal.fire({
-              title: "Transaction successful",
-              html: `<a href="https://solscan.io/tx/${response}?cluster=devnet" target="_blank">View in Solscan</a>`,
-              icon: "success"
-            })
-            setRecipientAddress("")
-            setAmount(0.0)
-            fetchTokenBalance() // Refresh after transfer
-            // }
-            // dispatch(showError("Transaction successful ✅"))
-          })
-          .catch((error) => {
-            console.error(error)
-            dispatch(showError("We're experiencing an unexpected issue. Please try again later.:" + error.message))
-          })
+    try {
+      const key = await fetchEncryptionKey(selectedAccount.id);
+
+      const decryptedKey = await decrypt(
+        selectedAccount.encryptedKey,
+        key,
+        Uint8Array.fromBase64(selectedAccount.iv)
+      );
+
+      const response = await transferToken(
+        recipientAddress,
+        amount * 1000000,
+        selectedToken,
+        decryptedKey
+      );
+
+      Swal.fire({
+        title: "Transaction successful",
+        html: `<a href="https://solscan.io/tx/${response}?cluster=devnet" target="_blank">View in Solscan</a>`,
+        icon: "success"
       });
 
-    }).finally(() => {
-      setInProgress(false)
-    })
-      ;
+      setRecipientAddress("");
+      setAmount(0.0);
+      fetchTokenBalance();
+
+    } catch (error) {
+      console.error(error);
+      dispatch(showError(
+        "We're experiencing an unexpected issue. Please try again later: " + error.message
+      ));
+    } finally {
+      setInProgress(false);
+    }
   }
 
   return (

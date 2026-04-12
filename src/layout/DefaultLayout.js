@@ -16,7 +16,6 @@ const DefaultLayout = () => {
 
   const errorMessage = useSelector((state) => state.error.message)
   const id = useSelector((state) => state.error.id)
-  const dispatch = useDispatch();
 
   useEffect(() => {
 
@@ -50,7 +49,7 @@ const DefaultLayout = () => {
         <div className="body flex-grow-1">
           <AppContent />
         </div>
-        {false && (<CToaster className="p-3 mb-5" placement="bottom-end" >
+        {(<CToaster className="p-3 mb-5" placement="bottom-end" >
           <CToast key={toastKey} animation={false} visible={true}>
             <CToastHeader closeButton>
               <svg
